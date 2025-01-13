@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDP Documentation Search</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .search-container {
+            margin: 20px 0;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            border-color: #0066cc;
+            outline: none;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .result {
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .result:first-child {
+            border: 2px solid #0066cc;
+            background: #f8f9ff;
+        }
+        .result h3 {
+            margin: 0 0 10px 0;
+            color: #0066cc;
+        }
+        .result a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        .result a:hover {
+            text-decoration: underline;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>CDP Documentation Search</h1>
+    <p>Search across multiple CDP documentation sources with AI-enhanced results.</p>
+    <div class="search-container">
+        <input type="text" id="search" placeholder="Ask a question about CDP documentation...">
+    </div>
+    <div id="results" class="results"></div>
+
+    <script>
+        const searchInput = document.getElementById('search');
+        const resultsDiv = document.getElementById('results');
+        let debounceTimeout;
+
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => {
+                const query = e.target.value.trim();
+                if (query) {
+                    searchDocs(query);
+                } else {
+                    resultsDiv.innerHTML = '';
+                }
+            }, 300);
+        });
+
+        async function searchDocs(query) {
+            try {
+                resultsDiv.innerHTML = '<div class="loading">Searching...</div>';
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const results = await response.json();
+                
+                if (results.length === 0) {
+                    resultsDiv.innerHTML = '<div class="result"><p>No results found. Try a different search term.</p></div>';
+                    return;
+                }
+
+                resultsDiv.innerHTML = results.map((result, index) => `
+                    <div class="result">
+                        <h3>${index === 0 ? 'AI-Generated Answer' : `<a href="${result.url}" target="_blank">${result.title}</a>`}</h3>
+                        <p>${index === 0 ? result.content : result.content.substring(0, 200)}...</p>
+                    </div>
+                `).join('');
+            } catch (error) {
+                resultsDiv.innerHTML = '<div class="result"><p>Error searching documentation. Please try again.</p></div>';
+            }
+        }
+    </script>
+</body>
+</html>
